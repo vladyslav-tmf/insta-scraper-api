@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from selenium import webdriver
 from selenium.common import (
@@ -193,6 +194,16 @@ class InstagramScraper:
             except NoSuchElementException:
                 image_url = None
 
+            timestamp = None
+            try:
+                time_element = self.driver.find_element(By.CSS_SELECTOR, "time._aaqe")
+                datetime_str = time_element.get_attribute("datetime")
+
+                if datetime_str:
+                    timestamp = datetime.fromisoformat(datetime_str.replace("Z", "+00:00"))
+            except (NoSuchElementException, ValueError) as error:
+                logger.warning(f"Failed to extract timestamp from post: {error}")
+
             hashtags = self.extract_hashtags(caption)
             has_target_hashtag = self.contains_target_hashtag(hashtags, target_hashtag)
 
@@ -206,6 +217,7 @@ class InstagramScraper:
                 image_url=image_url,
                 hashtags=hashtags,
                 contains_target_hashtag=has_target_hashtag,
+                timestamp=timestamp,
             )
 
             logger.info(f"Successfully scraped post {shortcode}")
